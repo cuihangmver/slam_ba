@@ -12,7 +12,7 @@ class CMapPointsBA : public SizedCostFunction<2/*number of residuals*/, 3/*size 
 private:
 CMapPointsBA(Eigen::Vector2d uv, Sophus::SE3d pose， cv::Mat K):_pose(pose), _uv(uv), _K(K)
 {
-
+as
 }
 public:
 virtual bool Evaluate(double const* const* parameters,  // parameters是待优化变量
