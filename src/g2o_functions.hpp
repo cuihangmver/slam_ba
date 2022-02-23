@@ -35,7 +35,7 @@ public:
         virtual bool read(std::istream &in) override { return true; }
 
         virtual bool write(std::ostream &out) const override { return true; }
-}
+};
 
 // 设置待优化路标点变量（路标点）
 class PointVertex : public g2o::BaseVertex<3, Eigen::Vec3>  // 定义_estimate的类型
@@ -57,19 +57,65 @@ public:
         virtual bool read(std::istream &in) override { return true; }
 
         virtual bool write(std::ostream &out) const override { return true; }
-}
+};
 
+// 一元边，优化姿态
 class PoseEdge : public g2o::BaseUnaryEdge<2, Eigen::Vector2d, PoseVertex>  // 残差维度及类型
 {
 public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-        PoseEdge(cv::Mat K, Eigen::Vector3d point)：_K(K), _point(point)
+        PoseEdge(cv::Mat K, Eigen::Vector3d point):_K(K), _point(point)
         {
 
         }
+        // 计算残差
         virtual void computeError() override 
         {
-                
+               const VertexPose *v = static_cast<VertexPose *>(_vertices[0]); 
+               SE3::SE3d T = v->estimate();
+               Eigen::Vector3d pointCam3d = _K * T * point;
+               Eigen::Vector2d uv = pointCam3d /= pointCam3d[2];
+               _error = _measurement - uv;
         }
-}
+        virtual void linearizeOplus() override
+        {
+                const VertexPose *v = static_cast<VertexPose *>(_vertices[0]); 
+                SE3::SE3d T = v->estimate();
+                Eigen::Vector3d pointCam3d = T * point;
+                Eigen::Vector3d pos_cam = T * _pos3d;
+                double fx = _K(0, 0);
+                double fy = _K(1, 1);
+                double X = pointCam3d[0];
+                double Y = pointCam3d[1];
+                double Z = pointCam3d[2];
+                double Zinv = 1.0 / (Z + 1e-18);  // 防止Z=0
+                double Zinv2 = Zinv * Zinv;
+                _jacobianOplusXi << -fx * Zinv, 0, fx * X * Zinv2, fx * X * Y * Zinv2,
+                -fx - fx * X * X * Zinv2, fx * Y * Zinv, 0, -fy * Zinv,
+                fy * Y * Zinv2, fy + fy * Y * Y * Zinv2, -fy * X * Y * Zinv2,
+                -fy * X * Zinv;
+        }
+        virtual bool read(std::istream &in) override { return true; }
+
+        virtual bool write(std::ostream &out) const override { return true; }
+private:
+        cv::Mat _K;
+        Eigen::Vector3d _point;
+};
+
+// 一元边，优化路标点
+class PointEdge : public g2o::BaseUnaryEdge<2, Eigen::Vector2d, PointVertex>  // 残差维度及类型
+{
+public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+        
+};
+
+// 二元边，优化位姿，路标点
+class PointEdge : public g2o::BaseUnaryEdge<2, Eigen::Vector2d, PoseVertex, PointVertex>  // 残差维度及类型
+{
+public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
+};
 #endif
