@@ -49,7 +49,7 @@ virtual bool Evaluate(double const* const* parameters,  // parameters是待优�
     R(2, 1) = R34(2, 1);
     R(2, 2) = R34(2, 2);
     // 对世界坐标系的导数
-    matrix23Jacobians = matrix23 * R;
+    matrix23Jacobians = matrix23 * R * (-1);
     jacobians[0] = matrix23Jacobians(0, 0);
     jacobians[1] = matrix23Jacobians(0, 1);
     jacobians[2] = matrix23Jacobians(0, 2);
@@ -93,18 +93,18 @@ virtual bool Evaluate(double const* const* parameters,
     residuals[0] = _uv(0) - pointCamera(0) * fx / pointCamera(2);    // 残差
     residuals[1] = _uv(1) - pointCamera(1) * fy / pointCamera(2); 
     // 对姿态的雅可比
-    jacobians[0] = fx / pointCamera(2);
+    jacobians[0] = (-1) * fx / pointCamera(2);
     jacobians[1] = 0;
-    jacobians[2] = (-1) * fx * pointCamera(0) / (pointCamera(2) * pointCamera(2));
-    jacobians[3] = (-1) * fx * pointCamera(0) * pointCamera(1) / (pointCamera(2) * pointCamera(2));
-    jacobians[4] = fx + fx * pointCamera(0) * pointCamera(0) / (pointCamera(2) * pointCamera(2));
-    jacobians[5] = (-1) * fx * pointCamera(1) / (pointCamera(2) * pointCamera(2));  
+    jacobians[2] = fx * pointCamera(0) / (pointCamera(2) * pointCamera(2));
+    jacobians[3] = fx * pointCamera(0) * pointCamera(1) / (pointCamera(2) * pointCamera(2));
+    jacobians[4] = (-1) * (fx + fx * pointCamera(0) * pointCamera(0) / (pointCamera(2) * pointCamera(2)));
+    jacobians[5] = fx * pointCamera(1) / (pointCamera(2) * pointCamera(2));  
     jacobians[6] = 0;
-    jacobians[7] = fy / pointCamera(2);
-    jacobians[8] = (-1) * fy * pointCamera(1) / (pointCamera(2) * pointCamera(2));
-    jacobians[9] = (-1) - fy * pointCamera(1) * pointCamera(1) / (pointCamera(2) * pointCamera(2));
-    jacobians[10] = fy * pointCamera(0) * pointCamera(1) / (pointCamera(2) * pointCamera(2));
-    jacobians[11] = fy * pointCamera(0) / pointCamera(2);  
+    jacobians[7] = (-1) * fy / pointCamera(2);
+    jacobians[8] = fy * pointCamera(1) / (pointCamera(2) * pointCamera(2));
+    jacobians[9] = fy + fy * pointCamera(1) * pointCamera(1) / (pointCamera(2) * pointCamera(2));
+    jacobians[10] = (-1) * fy * pointCamera(0) * pointCamera(1) / (pointCamera(2) * pointCamera(2));
+    jacobians[11] = (-1) * fy * pointCamera(0) / pointCamera(2);  
     }
     static ceres::SizedCostFunction<2, 6>* Create(Eigen::Vector2d uv, Eigen::Vector3d xyz, cv::Mat K)
     {
@@ -164,7 +164,7 @@ virtual bool Evaluate(double const* const* parameters,  // parameters[0][0] = fx
     R(2, 1) = R34(2, 1);
     R(2, 2) = R34(2, 2);
     // 世界坐标系点的雅可比
-    matrix23Jacobians = matrix23 * R;
+    matrix23Jacobians = matrix23 * R * (-1);
     jacobians[1][0] = matrix23Jacobians(0, 0);
     jacobians[1][1] = matrix23Jacobians(0, 1);
     jacobians[1][2] = matrix23Jacobians(0, 2);
@@ -172,18 +172,18 @@ virtual bool Evaluate(double const* const* parameters,  // parameters[0][0] = fx
     jacobians[1][4] = matrix23Jacobians(1, 1);
     jacobians[1][5] = matrix23Jacobians(1, 2);
     // 相机姿态雅可比
-    jacobians[1][0] = fx / pointCamera(2);
-    jacobians[1][1] = 0;
-    jacobians[1][2] = (-1) * fx * pointCamera(0) / (pointCamera(2) * pointCamera(2));
-    jacobians[1][3] = (-1) * fx * pointCamera(0) * pointCamera(1) / (pointCamera(2) * pointCamera(2));
-    jacobians[1][4] = fx + fx * pointCamera(0) * pointCamera(0) / (pointCamera(2) * pointCamera(2));
-    jacobians[1][5] = (-1) * fx * pointCamera(1) / (pointCamera(2) * pointCamera(2));  
-    jacobians[1][6] = 0;
-    jacobians[1][7] = fy / pointCamera(2);
-    jacobians[1][8] = (-1) * fy * pointCamera(1) / (pointCamera(2) * pointCamera(2));
-    jacobians[1][9] = (-1) - fy * pointCamera(1) * pointCamera(1) / (pointCamera(2) * pointCamera(2));
-    jacobians[1][10] = fy * pointCamera(0) * pointCamera(1) / (pointCamera(2) * pointCamera(2));
-    jacobians[1][11] = fy * pointCamera(0) / pointCamera(2);  
+    jacobians[0] = (-1) * fx / pointCamera(2);
+    jacobians[1] = 0;
+    jacobians[2] = fx * pointCamera(0) / (pointCamera(2) * pointCamera(2));
+    jacobians[3] = fx * pointCamera(0) * pointCamera(1) / (pointCamera(2) * pointCamera(2));
+    jacobians[4] = (-1) * (fx + fx * pointCamera(0) * pointCamera(0) / (pointCamera(2) * pointCamera(2)));
+    jacobians[5] = fx * pointCamera(1) / (pointCamera(2) * pointCamera(2));  
+    jacobians[6] = 0;
+    jacobians[7] = (-1) * fy / pointCamera(2);
+    jacobians[8] = fy * pointCamera(1) / (pointCamera(2) * pointCamera(2));
+    jacobians[9] = fy + fy * pointCamera(1) * pointCamera(1) / (pointCamera(2) * pointCamera(2));
+    jacobians[10] = (-1) * fy * pointCamera(0) * pointCamera(1) / (pointCamera(2) * pointCamera(2));
+    jacobians[11] = (-1) * fy * pointCamera(0) / pointCamera(2);  
     }
     static ceres::SizedCostFunction<2, 3, 6>* Create(Eigen::Vector2d uv, cv::Mat K)
     {
